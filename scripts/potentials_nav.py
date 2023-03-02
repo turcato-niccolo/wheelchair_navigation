@@ -20,6 +20,8 @@ y_goal = 2.0
 v_long = 0.5
 gain_w = 1.0
 
+epsilon = 0.1
+
 pub_vel = None
 
 def cbk_odom(data):
@@ -30,16 +32,23 @@ def cbk_odom(data):
     y_curr = pose.position.y
 
     nav = Navigation.PolarPotentialFieldNav(num_cells, num_sectors)
-    nav.set_goal(np.sqrt((x_goal-x_curr) ** 2 + (y_goal-y_curr) ** 2), math.atan2(y_goal-y_curr, x_goal-x_curr))
+    dist = np.sqrt((x_goal-x_curr) ** 2 + (y_goal-y_curr) ** 2)
+    nav.set_goal(dist, math.atan2(y_goal-y_curr, x_goal-x_curr))
 
     theta = nav.get_heading()
 
     msg = Twist()
-    msg.linear.x = v_long
-    msg.angular.z = gain_w * theta
+    if dist > epsilon:
+        msg.linear.x = v_long
+        msg.angular.z = gain_w * theta
+    else:
+        msg.linear.x = 0.0
+        msg.angular.z = 0.0
 
     pub_vel.publish(msg)
 
+    if dist <= epsilon:
+        exit(0)
 
 if __name__ == '__main__':
     rospy.init_node('potentials_wheelchair_nav')
