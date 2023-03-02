@@ -1,10 +1,7 @@
 import rospy
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32
-import pickle as pkl
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
 from geometry_msgs.msg import Twist
 import math
 import PotentialFieldPlanning.Navigation as Navigation
