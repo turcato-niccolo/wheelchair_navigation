@@ -24,14 +24,14 @@ x_goal = 4.0
 y_goal = 2.0
 
 v_long = 0.5
-gain_w = 0.45
+gain_w = 0.2
 
 epsilon = 0.25
 
 pub_vel = None
 nav = None
 
-bridge = CvBridge()
+list_of_objects = [(3.0, 0.0)]
 
 class PolarNav:
     """
@@ -92,14 +92,24 @@ class PolarPotentialFieldNav(PolarNav):
 
         for i in range(self.num_cells):
             for j in range(self.num_sec):
+
                 self.map[i, j] += self.goal_weight * np.exp(-((sector-j)**2 + (cell-i)**2) / np.abs(self.goal_weight))
 
-    def add_obstacle(self, r, theta):
+    def add_obstacle(self, r, theta, radius=1.0):
         cell, sector = self.get_polar_indices(r, theta)
+
+        sector_angle = 2 * self.max_angle / self.num_sec
+        cell_len = self.max_radius / self.num_cells
 
         for i in range(self.num_cells):
             for j in range(self.num_sec):
-                self.map[i, j] += self.obstacle_weight * np.exp(-((sector - j) ** 2 + (cell - i) ** 2) / np.abs(self.obstacle_weight))
+                r_loc = i * (cell_len) + cell_len / 2
+                th_loc = j * (sector_angle) + sector_angle / 2 - self.max_angle
+                d_sq = r_loc**2 + r**2 - 2 * r * r_loc * math.cos(th_loc- theta)
+                if d_sq <= radius**2:
+                    self.map[i, j] = self.obstacle_weight
+                else:
+                    self.map[i, j] += self.obstacle_weight * np.exp(-d_sq / np.abs(self.obstacle_weight))
 
 def cbk_odom(data):
     global num_cells, num_sectors, pub_img, bridge
@@ -113,6 +123,10 @@ def cbk_odom(data):
     ang = math.atan2(y_goal-y_curr, x_goal-x_curr)
     nav.reset()
     nav.set_goal(dist, ang)
+    for p_o in list_of_objects:
+        d = np.sqrt((p_o[0]-x_curr) ** 2 + (p_o[1]-y_curr) ** 2)
+        ang = math.atan2(p_o[1]-y_curr, p_o[1]-x_curr)
+        nav.add_obstacle(d, ang)
     idx, theta = nav.get_heading()
 
     print('({},{}) - ({},{}) - {}: {}'.format(x_curr, y_curr, dist, ang, idx, theta))
