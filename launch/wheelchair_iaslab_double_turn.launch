@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  <param name="costmap_converter_plugin" type="string" value="costmap_converter::CostmapToPolygonsDBSMCCH" />
 
   <arg name="world_name" default="$(find wheelchair_iaslab_gazebo)/worlds/empty.world"/>
 
